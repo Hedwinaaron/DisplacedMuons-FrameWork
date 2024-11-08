@@ -8,11 +8,11 @@ Recommended release for this analyzer is CMSSW_13_0_13 or later. Commands to set
 ```
 cmsrel CMSSW_13_0_13
 
-cd CMSSW_12_4_0/src
+cd CMSSW_13_0_13/src
 
 cmsenv
 
-git clone git@github.com:CeliaFernandez/standard-Ntuplizer.git
+git clone https://github.com/Hedwinaaron/DisplacedMuons-FrameWork.git
 
 scram b -j 8
 ```
