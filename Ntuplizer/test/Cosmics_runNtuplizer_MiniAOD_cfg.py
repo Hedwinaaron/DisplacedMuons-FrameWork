@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 import os
 
 #################################  CONSTANTS  #################################################
-ERA = 'F'
+#ERA = 'F'
 ###############################################################################################
 
 
@@ -29,15 +29,15 @@ nEvents = 100
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(nEvents) )
 
 # Read events
-listOfFiles = ['/store/user/rlopezru/Samples/NoBPTX/Cosmics_2022G_PromptReco_CMSSW_13_2_0_pre1_MiniAOD/230526_123154/0000/Cosmics_2022G_PromptReco_CMSSW_13_2_0_pre1_MiniAOD_155.root']
+listOfFiles = ['file:/eos/user/h/hencinas/Mu_efficiency_Analysis/MINIAOD/e65bc1da-a7b5-4daa-911c-efffadd093b8.root']
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring( listOfFiles ),
     secondaryFileNames = cms.untracked.vstring(),
     skipEvents = cms.untracked.uint32(0)
   )
-if ERA in 'ABCD': gTag = '124X_dataRun3_PromptAnalysis_v1'
-if ERA in 'EFG':  gTag = '124X_dataRun3_Prompt_v10'
-process.GlobalTag = GlobalTag(process.GlobalTag, gTag)
+#if ERA in 'ABCD': gTag = '124X_dataRun3_PromptAnalysis_v1'
+#if ERA in 'EFG':  gTag = '124X_dataRun3_Prompt_v10'
+process.GlobalTag = GlobalTag(process.GlobalTag, '130X_dataRun3_PromptAnalysis_v1')
 
 ## Define the process to run 
 ## 

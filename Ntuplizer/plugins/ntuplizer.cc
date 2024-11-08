@@ -9,7 +9,7 @@
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
-
+#include "DataFormats/Math/interface/deltaPhi.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
@@ -94,7 +94,13 @@ class ntuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       // Trigger tags
       std::vector<std::string> HLTPaths_;
       bool triggerPass[200] = {false};
-
+      
+      // Tag trigger paths
+      std::vector<std::string> Tag_HLTPaths_;
+      bool Tag_triggerPass[200] = {false};
+      // Probe trigger paths
+      std::vector<std::string> Probe_HLTPaths_;
+      bool Probe_triggerPass[200] = {false};
       // Event
       Int_t event = 0;
       Int_t lumiBlock = 0;
@@ -255,7 +261,65 @@ class ntuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
       Float_t HardProcessParticle_vy[30];
       Float_t HardProcessParticle_vz[30];
       Int_t HardProcessParticle_pdgId[30];
+      //---------------------------------
+      // Variables for hemispheres
+      //---------------------------------
+      Int_t ndgl_up;
+      Int_t ndgl_down;
+      Int_t ndmu_upper[200]= {0};
+      Int_t ndmu_lower[200]= {0};
 
+      Float_t upper_muon_eta[200]={0.};
+      Float_t upper_muon_phi[200]={0.};
+      Float_t upper_muon_pts[200]={0.};
+      Float_t lower_muon_eta[200]={0.};
+      Float_t lower_muon_phi[200]={0.};
+      Float_t lower_muon_pts[200]={0.};
+
+
+      //---------------------------------
+      // Variables for hemispheres Tag
+      //---------------------------------
+      Int_t tag_dgl=0;
+      Float_t tag_dgl_pt[200]= {0.};
+      Float_t tag_dgl_eta[200]= {0.};
+      Float_t tag_dgl_phi[200]= {0.};
+      Int_t   is_tag_dgl[200]={0}; 
+      Float_t tag_dgl_ptError[200] = {0.};
+      Float_t tag_dgl_dxy[200] = {0.};
+      Float_t tag_dgl_dz[200] = {0.};
+      Float_t tag_dgl_normalizedChi2[200] = {0.};
+      Float_t tag_dgl_charge[200] = {0.};
+      Int_t tag_dgl_nMuonHits[200] = {0};
+      Int_t tag_dgl_nValidMuonHits[200] = {0};
+      Int_t tag_dgl_nValidMuonDTHits[200] = {0};
+      Int_t tag_dgl_nValidMuonCSCHits[200] = {0};
+      Int_t tag_dgl_nValidMuonRPCHits[200] = {0};
+      Int_t tag_dgl_nValidStripHits[200] = {0};
+      Int_t tag_dgl_nhits[200] = {0};
+      
+      
+      //---------------------------------
+      // Variables for hemispheres probe
+      //---------------------------------
+      Int_t probe_dgl=0;
+      Float_t probe_dgl_pt[200]= {0.};
+      Float_t probe_dgl_eta[200]= {0.};
+      Float_t probe_dgl_phi[200]= {0.};
+      Int_t    is_probe_dgl[200]={0};
+      Float_t probe_dgl_ptError[200] = {0.};
+      Float_t probe_dgl_dxy[200] = {0.};
+      Float_t probe_dgl_dz[200] = {0.};
+      Float_t probe_dgl_normalizedChi2[200] = {0.};
+      Float_t probe_dgl_charge[200] = {0.};
+      Int_t probe_dgl_nMuonHits[200] = {0};
+      Int_t probe_dgl_nValidMuonHits[200] = {0};
+      Int_t probe_dgl_nValidMuonDTHits[200] = {0};
+      Int_t probe_dgl_nValidMuonCSCHits[200] = {0};
+      Int_t probe_dgl_nValidMuonRPCHits[200] = {0};
+      Int_t probe_dgl_nValidStripHits[200] = {0};
+      Int_t probe_dgl_nhits[200] = {0}; 
+            
       //
       // --- Output
       //
@@ -309,6 +373,12 @@ void ntuplizer::beginJob() {
    // Load HLT paths
    HLTPaths_.push_back("HLT_L2Mu10_NoVertex_NoBPTX3BX");
    HLTPaths_.push_back("HLT_L2Mu10_NoVertex_NoBPTX");
+   // Load Tag filter 
+   Tag_HLTPaths_.push_back("HLT_L2Mu10_NoVertex_NoBPTX3BX_v");
+   Tag_HLTPaths_.push_back("hltL1fL1sMuOpenNotBptxORNoHaloMu3BXL1Filtered0");
+   Tag_HLTPaths_.push_back("hltL2fL1sMuOpenNotBptxORNoHaloMu3BXL1f0NoVtxCosmicSeedMeanTimerL2Filtered10");
+   // Load Tag filter
+   Probe_HLTPaths_.push_back("HLT_L2Mu10_NoVertex_NoBPTX3BX_v");
 
    // TTree branches
    tree_out->Branch("event", &event, "event/I");
@@ -430,6 +500,59 @@ void ntuplizer::beginJob() {
    tree_out->Branch("dmu_dtk_nValidStripHits", dmu_dtk_nValidStripHits, "dmu_dtk_nValidStripHits[ndmu]/I");
    tree_out->Branch("dmu_dtk_nhits", dmu_dtk_nhits, "dmu_dtk_nhits[ndmu]/I");
 
+    // Store values in the tree or output (e.g., add branches for upper/lower muons)
+    
+    
+    tree_out->Branch("ndmu_upper", &ndmu_upper, "ndmu_upper/I");
+    tree_out->Branch("upper_muon_pts", &upper_muon_pts, "dgl_pt[ndgl]/F");
+    tree_out->Branch("upper_muon_eta", &upper_muon_eta, "dgl_eta[ndgl]/F");
+    tree_out->Branch("upper_muon", &upper_muon_phi, "dgl_phi[ndgl]/F");
+    
+    tree_out->Branch("ndmu_lower", &ndmu_lower, "ndmu_lower/I");
+    tree_out->Branch("lower_muon_pts", &lower_muon_pts, "dgl_pt[ndgl]/F");
+    tree_out->Branch("lower_muon_eta", &lower_muon_eta, "dgl_eta[ndgl]/F");
+    tree_out->Branch("lower_muon_phi", &lower_muon_phi, "dgl_phi[ndgl]/F");
+  
+    //store tag and probe hist
+    // Tag
+    tree_out->Branch("tag_dgl", &tag_dgl, "tag_dgl/I");
+    tree_out->Branch("tag_dgl_pt", tag_dgl_pt , "tag_dgl_pt[tag_dgl]/F");
+    tree_out->Branch("tag_dgl_eta", tag_dgl_eta , "tag_dgl_eta[tag_dgl]/F");
+    tree_out->Branch("tag_dgl_phi", tag_dgl_phi , "tag_dgl_phi[tag_dgl]/F");
+    tree_out->Branch("is_tag_dgl", is_tag_dgl , "is_tag_dgl[tag_dgl]/I");
+    tree_out->Branch("tag_dgl_ptError", tag_dgl_ptError, "tag_dgl_ptError[tag_dgl]/F");
+    tree_out->Branch("tag_dgl_dxy", tag_dgl_dxy, "tag_dgl_dxy[tag_dgl]/F");
+    tree_out->Branch("tag_dgl_dz", tag_dgl_dz, "tag_dgl_dz[tag_dgl]/F");
+    tree_out->Branch("tag_dgl_normalizedChi2", tag_dgl_normalizedChi2, "tag_dgl_normalizedChi2[tag_dgl]/F");
+    tree_out->Branch("tag_dgl_charge", tag_dgl_charge, "tag_dgl_charge[tag_dgl]/F");
+    tree_out->Branch("tag_dgl_nMuonHits", tag_dgl_nMuonHits, "tag_dgl_nMuonHits[tag_dgl]/I");
+    tree_out->Branch("tag_dgl_nValidMuonHits", tag_dgl_nValidMuonHits, "tag_dgl_nValidMuonHits[tag_dgl]/I");
+    tree_out->Branch("tag_dgl_nValidMuonDTHits", tag_dgl_nValidMuonDTHits, "tag_dgl_nValidMuonDTHits[tag_dgl]/I");
+    tree_out->Branch("tag_dgl_nValidMuonCSCHits", tag_dgl_nValidMuonCSCHits, "tag_dgl_nValidMuonCSCHits[tag_dgl]/I");
+    tree_out->Branch("tag_dgl_nValidMuonRPCHits", tag_dgl_nValidMuonRPCHits, "tag_dgl_nValidMuonRPCHits[tag_dgl]/I");
+    tree_out->Branch("tag_dgl_nValidStripHits", tag_dgl_nValidStripHits, "tag_dgl_nValidStripHits[tag_dgl]/I");
+    tree_out->Branch("tag_dgl_nhits", tag_dgl_nhits, "tag_dgl_nhits[tag_dgl]/I");
+    
+    //probe
+    tree_out->Branch("probe_dgl", &probe_dgl, "probe_dgl/I");
+    tree_out->Branch("probe_dgl_pt", probe_dgl_pt , "probe_dgl_pt[probe_dgl]/F");
+    tree_out->Branch("probe_dgl_eta", probe_dgl_eta , "probe_dgl_eta[probe_dgl]/F");
+    tree_out->Branch("probe_dgl_phi", probe_dgl_phi , "probe_dgl_phi[probe_dgl]/F");
+    tree_out->Branch("is_probe_dgl", is_probe_dgl , "is_probe_dgl[probe_dgl]/I");
+    tree_out->Branch("probe_dgl_ptError", probe_dgl_ptError, "probe_dgl_ptError[probe_dgl]/F");
+    tree_out->Branch("probe_dgl_dxy", probe_dgl_dxy, "probe_dgl_dxy[probe_dgl]/F");
+    tree_out->Branch("probe_dgl_dz", probe_dgl_dz, "probe_dgl_dz[probe_dgl]/F");
+    tree_out->Branch("probe_dgl_normalizedChi2", probe_dgl_normalizedChi2, "probe_dgl_normalizedChi2[probe_dgl]/F");
+    tree_out->Branch("probe_dgl_charge", probe_dgl_charge, "probe_dgl_charge[probe_dgl]/F");
+    tree_out->Branch("probe_dgl_nMuonHits", probe_dgl_nMuonHits, "probe_dgl_nMuonHits[probe_dgl]/I");
+    tree_out->Branch("probe_dgl_nValidMuonHits", probe_dgl_nValidMuonHits, "probe_dgl_nValidMuonHits[probe_dgl]/I");
+    tree_out->Branch("probe_dgl_nValidMuonDTHits", probe_dgl_nValidMuonDTHits, "probe_dgl_nValidMuonDTHits[probe_dgl]/I");
+    tree_out->Branch("probe_dgl_nValidMuonCSCHits", probe_dgl_nValidMuonCSCHits, "probe_dgl_nValidMuonCSCHits[probe_dgl]/I");
+    tree_out->Branch("probe_dgl_nValidMuonRPCHits", probe_dgl_nValidMuonRPCHits, "probe_dgl_nValidMuonRPCHits[probe_dgl]/I");
+    tree_out->Branch("probe_dgl_nValidStripHits", probe_dgl_nValidStripHits, "probe_dgl_nValidStripHits[probe_dgl]/I");
+    tree_out->Branch("probe_dgl_nhits", probe_dgl_nhits, "probe_dgl_nhits[probe_dgl]/I");
+    
+    
    if (!isData) {
      // ----------------------------------
      // PrimaryVertices
@@ -476,6 +599,15 @@ void ntuplizer::beginJob() {
    for (unsigned int ihlt = 0; ihlt < HLTPaths_.size(); ihlt++) {
      tree_out->Branch(TString(HLTPaths_[ihlt]), &triggerPass[ihlt]);
    }
+   
+   // Tag Trigger branches
+   for (unsigned int ihlt = 0; ihlt < Tag_HLTPaths_.size(); ihlt++) {
+     tree_out->Branch(TString(Tag_HLTPaths_[ihlt]), &Tag_triggerPass[ihlt]);
+   }
+   // Tag Trigger branches
+   for (unsigned int ihlt = 0; ihlt < Probe_HLTPaths_.size(); ihlt++) {
+     tree_out->Branch(TString(Probe_HLTPaths_[ihlt]), &Probe_triggerPass[ihlt]);
+   }
 
 }
 
@@ -515,7 +647,7 @@ void ntuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    // Count number of events read
    counts->Fill(0);
-
+   
 
    // -> Event info
    event = iEvent.id().event();
@@ -551,7 +683,37 @@ void ntuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      dgl_nLostMuonRPCHits[ndgl] = dgl.hitPattern().numberOfLostMuonRPCHits();
      ndgl++;
    }
+  
+  
+  // Loop over displacedMuonCollection
+  ndgl_up=0;
+  ndgl_down=0;
+  for (unsigned int i = 0; i < dmuons->size(); i++) {
+      const reco::Muon& muon = dmuons->at(i);
 
+      // Get the muon eta value to sort into hemispheres
+      float muon_eta = muon.eta();
+      float muon_charge = muon.charge();
+
+      if (muon_eta > 0 && muon_charge < 0 ) {
+          // Muon in the upper hemisphere
+          ndmu_upper[ndgl_up]=muon.numberOfMatches(reco::Muon::SegmentArbitration);
+          upper_muon_pts[ndgl_up]=muon.pt(); 
+          upper_muon_eta[ndgl_up]=muon.eta();
+          upper_muon_phi[ndgl_up]=muon.phi();
+          ndgl_up++;
+      } else if (muon_eta < 0 && muon_charge < 0) {
+          // Muon in the lower hemisphere
+          ndmu_lower[ndgl_down]=muon.numberOfMatches(reco::Muon::SegmentArbitration);
+          lower_muon_pts[ndgl_down]=muon.pt();
+          lower_muon_eta[ndgl_up]=muon.eta();
+          lower_muon_phi[ndgl_up]=muon.phi();
+          ndgl_down++;
+      }
+  }
+   
+   
+   
    // ----------------------------------
    // displacedStandAloneMuons Collection
    // ----------------------------------
@@ -585,11 +747,277 @@ void ntuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
      ndsa++;
    }
+    
+        // ----------------------------------
+    // displacedMuons Collection tag
+    // ----------------------------------
+    tag_dgl = 0;
+    // Check if trigger fired:
+    const edm::TriggerNames &Tag_names = iEvent.triggerNames(*triggerBits);
+    unsigned int Tag_ipath = 0;
+    std::vector<reco::Muon> tag_muon;  // Vector to store selected tag muons
+    for (unsigned int i = 0; i < dmuons->size(); i++) {
+        std::cout << " - - tag_dgl" << tag_dgl << std::endl;
+        const reco::Muon& dglmuon(dmuons->at(i));
+        
+        if (dglmuon.isGlobalMuon()) {
+            const reco::Track* globalTrack = (dglmuon.combinedMuon()).get();
+            if (globalTrack == nullptr) {
+              continue;  // Skip if probe global track is null
+            }
+            
+            
+            // Get the transverse momentum (pT), eta, and phi
+            float pt = globalTrack->pt();
+            float eta = globalTrack->eta();
+            float phi = globalTrack->phi();  
+            
+            // Get the uncertainty in transverse momentum 
+            float ptError = globalTrack->ptError();
+            float relativePtError = ptError / pt;  
+            
+            // Apply Tag kinematic cuts:
+            if (pt > 10 && phi < 0) {
+                for(auto path: Tag_HLTPaths_){
+                  bool fired=false;
+                  for(unsigned int itrg = 0; itrg < triggerBits->size(); ++itrg){
+                    TString Tag_TrigPath = Tag_names.triggerName(itrg);
+                    if(!triggerBits->accept(itrg))
+                      continue;
+                    if (!Tag_TrigPath.Contains(path)){
+                     continue;
+                   }
+                   fired = true;
+                 }
+                 Tag_triggerPass[Tag_ipath] = fired;
+                 tag_dgl_pt[tag_dgl] = pt;
+                 tag_dgl_eta[tag_dgl] = eta;
+                 tag_dgl_phi[tag_dgl] = phi;  // Storing the φ value
+                 is_tag_dgl[tag_dgl] = dglmuon.isGlobalMuon();
+                 tag_dgl_ptError[tag_dgl] = globalTrack->ptError();
+                 tag_dgl_dxy[tag_dgl] = globalTrack->dxy();
+                 tag_dgl_dz[tag_dgl] = globalTrack->dz();
+                 tag_dgl_normalizedChi2[tag_dgl] = globalTrack->normalizedChi2();
+                 tag_dgl_charge[tag_dgl] = globalTrack->charge();
+                 tag_dgl_nMuonHits[tag_dgl] = globalTrack->hitPattern().numberOfMuonHits();
+                 tag_dgl_nValidMuonHits[tag_dgl] = globalTrack->hitPattern().numberOfValidMuonHits();
+                 tag_dgl_nValidMuonDTHits[tag_dgl] = globalTrack->hitPattern().numberOfValidMuonDTHits();
+                 tag_dgl_nValidMuonCSCHits[tag_dgl] = globalTrack->hitPattern().numberOfValidMuonCSCHits();
+                 tag_dgl_nValidMuonRPCHits[tag_dgl] = globalTrack->hitPattern().numberOfValidMuonRPCHits();
+                 tag_dgl_nValidStripHits[tag_dgl] = globalTrack->hitPattern().numberOfValidStripHits();
+                 tag_dgl_nhits[tag_dgl] = globalTrack->hitPattern().numberOfValidHits();
+                 tag_muon.push_back(dglmuon);  // Store the tag muon
+                 tag_dgl++;
+                 Tag_ipath++;
+                 } 
+                
+               } else {
+                // If muon doesn't pass the cuts, set the variables to 0
+                tag_dgl_pt[tag_dgl] = 0;
+                tag_dgl_eta[tag_dgl] = 0;
+                tag_dgl_phi[tag_dgl] = 0;
+                is_tag_dgl[tag_dgl] = 0;
+                tag_dgl_ptError[tag_dgl] = 0;
+                tag_dgl_dxy[tag_dgl] = 0;
+                tag_dgl_dz[tag_dgl] = 0;
+                tag_dgl_normalizedChi2[tag_dgl] = 0;
+                tag_dgl_charge[tag_dgl] = 0;
+                tag_dgl_nMuonHits[tag_dgl] = 0;
+                tag_dgl_nValidMuonHits[tag_dgl] = 0;
+                tag_dgl_nValidMuonDTHits[tag_dgl] = 0;
+                tag_dgl_nValidMuonCSCHits[tag_dgl] = 0;
+                tag_dgl_nValidMuonRPCHits[tag_dgl] = 0;
+                tag_dgl_nValidStripHits[tag_dgl] = 0;
+                tag_dgl_nhits[tag_dgl] = 0;
+            }//end Apply all cuts
+        }//end is global 
+    }//end tag selection
+    
+    // ----------------------------------
+    // displacedMuons Collection probe
+    // ----------------------------------
+    probe_dgl = 0;
+    
+    for (unsigned int i = 0; i < tag_muon.size(); i++) {
+        const reco::Muon& tag_dglmuon(tag_muon[i]);
+        
+        for (unsigned int l = 0; l < dmuons->size(); l++) {  
+            std::cout << "- - probe selection - -" << std::endl;
+            const reco::Muon& probe_dglmuon(dmuons->at(l));
+            
+            // Calculate pT difference between Tag and Probe muons
+            //float tag_Muon_pT = tag_dglmuon.pt();
+            //float probe_Muon_pt = probe_dglmuon.pt();
+            
+            // Check if Probe muon is back-to-back with Tag muon 
+            float dPhi = fabs(deltaPhi(probe_dglmuon.phi(),tag_dglmuon.phi() ));
+            
+            if (dPhi > 3.14) {
+                
+                dPhi = 2 * 3.14 - dPhi;  // Adjust to handle wrapping around
+            }
+            
+            // Calculate the azimuthal angle difference
+            float alpha = dPhi;  // For muons nearly back-to-back
+         
+            const reco::Track* probe_globalTrack = (probe_dglmuon.combinedMuon()).get();
+           
+            if (probe_globalTrack == nullptr) {
+              continue;  // Skip if probe global track is null
+            }
+           
+            // Apply Probe cuts: back-to-back 
+            if (alpha >1.0) {
+                std::cout << "- - probe selection pass - -" << std::endl;
+                probe_dgl_pt[probe_dgl] = probe_globalTrack->pt();
+                probe_dgl_eta[probe_dgl] = probe_globalTrack->eta();
+                probe_dgl_phi[probe_dgl] = probe_globalTrack->phi();
+                is_probe_dgl[probe_dgl] = probe_dglmuon.isGlobalMuon();
+                probe_dgl_ptError[probe_dgl] = probe_globalTrack->ptError();
+                probe_dgl_dxy[probe_dgl] = probe_globalTrack->dxy();
+                probe_dgl_dz[probe_dgl] = probe_globalTrack->dz();
+                probe_dgl_normalizedChi2[probe_dgl] = probe_globalTrack->normalizedChi2();
+                probe_dgl_charge[probe_dgl] = probe_globalTrack->charge();
+                probe_dgl_nMuonHits[probe_dgl] = probe_globalTrack->hitPattern().numberOfMuonHits();
+                probe_dgl_nValidMuonHits[probe_dgl] = probe_globalTrack->hitPattern().numberOfValidMuonHits();
+                probe_dgl_nValidMuonDTHits[probe_dgl] = probe_globalTrack->hitPattern().numberOfValidMuonDTHits();
+                probe_dgl_nValidMuonCSCHits[probe_dgl] = probe_globalTrack->hitPattern().numberOfValidMuonCSCHits();
+                probe_dgl_nValidMuonRPCHits[probe_dgl] = probe_globalTrack->hitPattern().numberOfValidMuonRPCHits();
+                probe_dgl_nValidStripHits[probe_dgl] = probe_globalTrack->hitPattern().numberOfValidStripHits();
+                probe_dgl_nhits[probe_dgl] = probe_globalTrack->hitPattern().numberOfValidHits();
+                probe_dgl++;
+            } else {
+                // If probe muon doesn't pass the cuts, set the variables to 0
+                probe_dgl_pt[probe_dgl] = 0;
+                probe_dgl_eta[probe_dgl] = 0;
+                probe_dgl_phi[probe_dgl] = 0;
+                probe_dgl_ptError[probe_dgl] = 0;
+                probe_dgl_dxy[probe_dgl] = 0;
+                probe_dgl_dz[probe_dgl] = 0;
+                probe_dgl_normalizedChi2[probe_dgl] = 0;
+                probe_dgl_charge[probe_dgl] = 0;
+                probe_dgl_nMuonHits[probe_dgl] = 0;
+                probe_dgl_nValidMuonHits[probe_dgl] = 0;
+                probe_dgl_nValidMuonDTHits[probe_dgl] = 0;
+                probe_dgl_nValidMuonCSCHits[probe_dgl] = 0;
+                probe_dgl_nValidMuonRPCHits[probe_dgl] = 0;
+                probe_dgl_nValidStripHits[probe_dgl] = 0;
+                probe_dgl_nhits[probe_dgl] = 0;
+            }
+        }
+    }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /*// ----------------------------------
+    // displacedMuons Collection tag
+    // ----------------------------------
+    tag_dgl = 0;
+    
+    std::vector<reco::Muon> tag_muon;  // Vector to store selected tag muons
+    for (unsigned int i = 0; i < dmuons->size(); i++) {
+        std::cout << " - - tag_dgl" << tag_dgl << std::endl;
+        const reco::Muon& dglmuon(dmuons->at(i));
+        
+        if (dglmuon.isGlobalMuon()) {
+            const reco::Track* globalTrack = (dglmuon.combinedMuon()).get();
+            if (globalTrack == nullptr) {
+              continue;  // Skip if probe global track is null
+            }
+            
+            
+            // Get the transverse momentum (pT), eta, and phi
+            float pt = globalTrack->pt();
+            float eta = globalTrack->eta();
+            float phi = globalTrack->phi();  
+            
+            // Get the uncertainty in transverse momentum 
+            float ptError = globalTrack->ptError();
+            float relativePtError = ptError / pt;  
+            
+            // Apply all Tag cuts:
+            if (pt > 20 && fabs(eta) < 0.9 && relativePtError < 0.3 && phi > -2.6 && phi < -0.6 && globalTrack->hitPattern().numberOfValidHits() > 12 && globalTrack->hitPattern().numberOfValidStripHits() > 5) {
+                tag_dgl_pt[tag_dgl] = pt;
+                tag_dgl_eta[tag_dgl] = eta;
+                tag_dgl_phi[tag_dgl] = phi;  // Storing the φ value
+                is_tag_dgl[tag_dgl] = dglmuon.isGlobalMuon();
+                tag_muon.push_back(dglmuon);  // Store the tag muon
+                tag_dgl++;
+            } else {
+                // If muon doesn't pass the cuts, set the variables to 0
+                tag_dgl_pt[tag_dgl] = 0;
+                tag_dgl_eta[tag_dgl] = 0;
+                tag_dgl_phi[tag_dgl] = 0;
+            }//end Apply all cuts
+        }//end is global 
+    }//end tag selection
+    
+    // ----------------------------------
+    // displacedMuons Collection probe
+    // ----------------------------------
+    probe_dgl = 0;
+    
+    for (unsigned int i = 0; i < tag_muon.size(); i++) {
+        const reco::Muon& tag_dglmuon(tag_muon[i]);
+        
+        for (unsigned int l = 0; l < dmuons->size(); l++) {  
+            std::cout << "- - probe selection - -" << std::endl;
+            const reco::Muon& probe_dglmuon(dmuons->at(l));
+            
+            // Calculate pT difference between Tag and Probe muons
+            //float tag_Muon_pT = tag_dglmuon.pt();
+            //float probe_Muon_pt = probe_dglmuon.pt();
+            
+            // Check if Probe muon is back-to-back with Tag muon 
+            float deltaPhi = fabs(tag_dglmuon.phi() - probe_dglmuon.phi());
+            
+            if (deltaPhi > 3.14) {
+                
+                deltaPhi = 2 * 3.14 - deltaPhi;  // Adjust to handle wrapping around
+            }
+            
+            // Calculate the azimuthal angle difference
+            float alpha = deltaPhi;  // For muons nearly back-to-back
+         
+            const reco::Track* probe_globalTrack = (probe_dglmuon.combinedMuon()).get();
+           
+            if (probe_globalTrack == nullptr) {
+              continue;  // Skip if probe global track is null
+            }
+           
+            // Apply Probe cuts: back-to-back 
+            if (alpha > 2.8 && probe_globalTrack->pt() > 20) {
+                std::cout << "- - probe selection pass - -" << std::endl;
+                probe_dgl_pt[probe_dgl] = probe_globalTrack->pt();
+                probe_dgl_eta[probe_dgl] = probe_globalTrack->eta();
+                probe_dgl_phi[probe_dgl] = probe_globalTrack->phi();
+                is_probe_dgl[probe_dgl] = probe_dglmuon.isGlobalMuon();
+                probe_dgl++;
+            } else {
+                // If probe muon doesn't pass the cuts, set the variables to 0
+                probe_dgl_pt[probe_dgl] = 0;
+                probe_dgl_eta[probe_dgl] = 0;
+                probe_dgl_phi[probe_dgl] = 0;
+            }
+        }
+    }*/
+
+   
+   
    // ----------------------------------
    // displacedMuons Collection
    // ----------------------------------
-   ndmu = 0;;
+   ndmu = 0;
    for (unsigned int i = 0; i < dmuons->size(); i++) {
      std::cout << " - - ndmu: " << ndmu << std::endl;
      const reco::Muon& dmuon(dmuons->at(i));
@@ -622,6 +1050,9 @@ void ntuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        dmu_dgl_nValidMuonRPCHits[ndmu] = globalTrack->hitPattern().numberOfValidMuonRPCHits();
        dmu_dgl_nValidStripHits[ndmu] = globalTrack->hitPattern().numberOfValidStripHits();
        dmu_dgl_nhits[ndmu] = globalTrack->hitPattern().numberOfValidHits();
+       
+       
+
      } else {
        dmu_dgl_pt[ndmu] = 0;
        dmu_dgl_eta[ndmu] = 0;
